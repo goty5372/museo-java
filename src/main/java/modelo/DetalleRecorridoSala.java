@@ -1,10 +1,12 @@
 package modelo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Objects;
 
 // representa una sala dentro de un recorrido y su numero de orden (sequence_number)
 public class DetalleRecorridoSala implements Comparable<DetalleRecorridoSala> {
 
+    @JsonIgnore
     private RecorridoGuiado recorrido;
     private SalaExposicion sala;
     private int numeroOrden;

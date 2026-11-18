@@ -11,6 +11,7 @@ public class HistorialExhibicion {
     private static int contador = 1;
 
     private int id;
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Obra obra;
     private SalaExposicion sala;
     private LocalDateTime fechaInicio;

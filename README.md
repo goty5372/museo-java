@@ -1,27 +1,33 @@
 # 🏛️ Sistema de Administración de Museos
 
-Sistema de escritorio en Java para gestionar colecciones de arte, obras, artistas, salas de exposición y recorridos guiados. Desarrollado con principios de Programación Orientada a Objetos (POO): herencia, polimorfismo, encapsulamiento y composición.
+API REST en **Quarkus 3.6** para gestionar colecciones de arte, obras, artistas, salas de exposición y recorridos guiados. Desarrollado con principios de Programación Orientada a Objetos (POO): herencia, polimorfismo, encapsulamiento y composición.
 
 ---
 
-## 📋 Descripción
+## 🚀 Stack tecnológico
 
-La aplicación permite administrar múltiples museos con sus respectivas salas, registrar obras de arte con seguimiento de conservación, trazar el historial de traslados entre salas y planificar recorridos guiados. Al iniciar, carga automáticamente datos de ejemplo basados en el **Museo Nacional de Colombia** y el **Museo del Oro**.
+| Tecnología | Versión | Uso |
+|---|---|---|
+| **Quarkus** | 3.6.0 | Framework principal |
+| **RESTEasy Reactive** | — | Endpoints REST (JAX-RS) |
+| **CDI (ArC)** | — | Inyección de dependencias |
+| **SmallRye OpenAPI** | — | Documentación Swagger UI |
+| **Java** | 17 | Lenguaje |
+| **Maven** | 3.8+ | Gestión de dependencias |
 
 ---
 
 ## ✨ Funcionalidades
 
-| Módulo | Descripción |
+| Módulo | Endpoints |
 |---|---|
-| 🏛️ **Museos** | Registrar museos con nombre, descripción, coordenadas GPS y página web |
-| 🚪 **Salas** | Crear salas de exposición con capacidad máxima, asociadas a un museo |
-| 🎨 **Obras** | Registrar obras con artista (o anónimas), categoría, fechas y porcentaje de conservación |
-| 👤 **Artistas** | Registrar artistas con nombre, nacionalidad y biografía |
-| 🏷️ **Categorías** | Clasificar obras por tipo (Pintura, Escultura, Orfebrería, etc.) |
-| 🔄 **Traslados** | Mover obras entre salas con registro histórico automático |
-| 🗺️ **Recorridos** | Crear recorridos guiados con itinerario ordenado de salas, fechas y estado |
-| 📊 **Reportes** | Listados de obras, promedios de conservación, historial de traslados, estado general |
+| 🏛️ **Museos** | `GET /museos` · `GET /museos/{id}` · `POST /museos` |
+| 🚪 **Salas** | `GET /salas` · `GET /salas/{id}` · `POST /salas` |
+| 🎨 **Obras** | `GET /obras` · `GET /obras/{id}` · `POST /obras` · `PUT /obras/{id}/mover` |
+| 👤 **Artistas** | `GET /artistas` · `GET /artistas/{id}` · `POST /artistas` |
+| 🏷️ **Categorías** | `GET /categorias` · `GET /categorias/{id}` · `POST /categorias` |
+| 🗺️ **Recorridos** | `GET /recorridos` · `GET /recorridos/{id}` · `POST /recorridos` · `POST /recorridos/{id}/salas` · `PUT /recorridos/{id}/salas/orden` · `DELETE /recorridos/{id}/salas/{posicion}` |
+| 📊 **Reportes** | `GET /reportes/obras` · `GET /reportes/conservacion` · `GET /reportes/estados` · `GET /reportes/general` |
 
 ---
 
@@ -41,23 +47,44 @@ El estado de cada obra se determina automáticamente según su porcentaje de con
 
 ```
 museo-java/
-└── src/
-    ├── app/
-    │   └── Main.java                   # Menú de consola e interacción con el usuario
-    ├── modelo/
-    │   ├── Museo.java                  # Entidad Museo (contiene salas)
-    │   ├── SalaExposicion.java         # Sala dentro de un museo
-    │   ├── Obra.java                   # Obra de arte con historial de traslados
-    │   ├── Artista.java                # Artista autor de la obra
-    │   ├── Categoria.java              # Categoría de la obra
-    │   ├── RecorridoGuiado.java        # Recorrido con itinerario de salas
-    │   ├── DetalleRecorridoSala.java   # Relación ordenada recorrido ↔ sala
-    │   ├── HistorialExhibicion.java    # Registro de estancia de una obra en una sala
-    │   ├── EstadoConservacion.java     # Enum con estados y recomendaciones
-    │   ├── Fechas.java                 # Formateadores de fecha reutilizables
-    │   └── Reportable.java             # Interfaz para generar reportes (polimorfismo)
-    └── servicio/
-        └── SistemaMuseoService.java    # Lógica del negocio, búsqueda y reportes
+├── pom.xml
+└── src/main/
+    ├── java/
+    │   ├── modelo/
+    │   │   ├── Museo.java                  # Entidad Museo (contiene salas)
+    │   │   ├── SalaExposicion.java         # Sala dentro de un museo
+    │   │   ├── Obra.java                   # Obra de arte con historial de traslados
+    │   │   ├── Artista.java                # Artista autor de la obra
+    │   │   ├── Categoria.java              # Categoría de la obra
+    │   │   ├── RecorridoGuiado.java        # Recorrido con itinerario de salas
+    │   │   ├── DetalleRecorridoSala.java   # Relación ordenada recorrido ↔ sala
+    │   │   ├── HistorialExhibicion.java    # Registro de estancia de una obra en una sala
+    │   │   ├── EstadoConservacion.java     # Enum con estados y recomendaciones
+    │   │   ├── Fechas.java                 # Formateadores de fecha reutilizables
+    │   │   └── Reportable.java             # Interfaz para reportes (polimorfismo)
+    │   ├── servicio/
+    │   │   └── SistemaMuseoService.java    # @ApplicationScoped — lógica del negocio
+    │   ├── resource/
+    │   │   ├── MuseoResource.java          # REST /museos
+    │   │   ├── SalaResource.java           # REST /salas
+    │   │   ├── ObraResource.java           # REST /obras
+    │   │   ├── ArtistaResource.java        # REST /artistas
+    │   │   ├── CategoriaResource.java      # REST /categorias
+    │   │   ├── RecorridoResource.java      # REST /recorridos
+    │   │   ├── ReporteResource.java        # REST /reportes
+    │   │   └── ErrorMapper.java            # 400 para IllegalArgumentException
+    │   └── dto/
+    │       ├── RegistrarMuseoRequest.java
+    │       ├── RegistrarSalaRequest.java
+    │       ├── RegistrarObraRequest.java
+    │       ├── RegistrarArtistaRequest.java
+    │       ├── RegistrarCategoriaRequest.java
+    │       ├── MoverObraRequest.java
+    │       ├── CrearRecorridoRequest.java
+    │       ├── AgregarSalaRequest.java
+    │       └── CambiarOrdenRequest.java
+    └── resources/
+        └── application.properties
 ```
 
 ---
@@ -66,72 +93,97 @@ museo-java/
 
 ```
 Reportable (interfaz)
- ├── Museo          → compone SalaExposicion[]
- ├── Obra           → asocia Artista, Categoria, SalaExposicion
- │                    contiene HistorialExhibicion[]
+ ├── Museo           → @ApplicationScoped via SistemaMuseoService
+ │    └── compone SalaExposicion[]
+ ├── Obra            → asocia Artista, Categoria, SalaExposicion
+ │    └── contiene HistorialExhibicion[]
  └── RecorridoGuiado → compone DetalleRecorridoSala[]
-                        (cada detalle referencia una SalaExposicion)
 
 EstadoConservacion (enum con método abstracto)
- ├── OPTIMO
- ├── REGULAR
- └── CRITICO
+ ├── OPTIMO · REGULAR · CRITICO
 ```
 
-- **Composición**: `Museo` → `SalaExposicion`; `RecorridoGuiado` → `DetalleRecorridoSala`
-- **Polimorfismo**: `Reportable.imprimirReporte()` es implementado por `Museo`, `Obra` y `RecorridoGuiado`
-- **Encapsulamiento**: validaciones en cada setter (nombres no vacíos, fechas coherentes, porcentaje 0-100, coordenadas válidas)
+- **CDI**: `SistemaMuseoService` es `@ApplicationScoped`; los recursos lo reciben con `@Inject`
+- **Polimorfismo**: `Reportable.imprimirReporte()` implementado por `Museo`, `Obra` y `RecorridoGuiado`
+- **Encapsulamiento**: validaciones en cada setter (nombres no vacíos, fechas coherentes, porcentaje 0–100, coordenadas válidas)
 - **Enum con comportamiento**: `EstadoConservacion` define un método abstracto `getRecomendacion()` sobrescrito en cada constante
 
 ---
 
-## 🚀 Cómo ejecutar
+## ▶️ Cómo ejecutar
 
 ### Requisitos
-- Java 11 o superior
+- Java 17+
+- Maven 3.8+
 
-### Compilar y correr desde la raíz del proyecto
-
+### Modo desarrollo (hot-reload)
 ```bash
-# Compilar
-javac -d out -sourcepath src src/app/Main.java
-
-# Ejecutar
-java -cp out app.Main
+mvn quarkus:dev
 ```
 
-> Al iniciar, el sistema carga automáticamente datos de ejemplo para que puedas probar todas las funciones sin necesidad de ingresar datos manualmente.
+### Compilar y ejecutar
+```bash
+mvn package
+java -jar target/quarkus-app/quarkus-run.jar
+```
+
+### Accesos
+| Recurso | URL |
+|---|---|
+| API base | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui |
+| OpenAPI spec | http://localhost:8080/q/openapi |
+
+> Al arrancar, el sistema carga automáticamente datos de ejemplo (Museo Nacional de Colombia, Museo del Oro, 7 obras, 2 recorridos) mediante `@PostConstruct`.
 
 ---
 
-## 📂 Menú principal
+## 📡 Ejemplos de uso
 
-```
-============================================
-   SISTEMA DE ADMINISTRACION DE MUSEOS
-============================================
+### Registrar un museo
+```http
+POST /museos
+Content-Type: application/json
 
-------------- MENU PRINCIPAL -------------
-1. Registrar museo
-2. Registrar sala de exposicion
-3. Registrar categoria
-4. Registrar artista
-5. Registrar obra
-6. Mover obra de sala
-7. Crear recorrido guiado
-8. Cambiar orden de un recorrido
-9. Ver listados
-10. Reportes
-0. Salir
+{
+  "nombre": "Museo de Arte Moderno",
+  "descripcion": "MAMBO de Bogotá",
+  "latitud": 4.6097,
+  "longitud": -74.0817,
+  "urlPagina": "https://www.mambogota.com"
+}
 ```
 
-### Reportes disponibles
-1. Obras con artista, categoría, sala y museo
-2. Promedio de conservación por sala
-3. Itinerario de un recorrido guiado
-4. Historial de salas de una obra
-5. Obras por estado de conservación
-6. Reporte general (museos, obras y recorridos)
+### Registrar una obra
+```http
+POST /obras
+Content-Type: application/json
+
+{
+  "nombre": "El Abrazo",
+  "descripcion": "Óleo sobre lienzo",
+  "porcentajeConservacion": 85,
+  "idCategoria": 1,
+  "idArtista": 1,
+  "idSala": 1
+}
+```
+
+### Mover una obra de sala
+```http
+PUT /obras/1/mover
+Content-Type: application/json
+
+{
+  "idSala": 3,
+  "fecha": "2026-11-18T10:00:00"
+}
+```
+
+### Reporte de conservación por sala
+```http
+GET /reportes/conservacion
+```
 
 ---
 

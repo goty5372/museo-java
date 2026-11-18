@@ -8,6 +8,7 @@ public class SalaExposicion {
     private String nombre;
     private String descripcion;
     private int capacidad;
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Museo museo;   // se asigna cuando la sala se agrega a un museo
 
     public SalaExposicion(int id, String nombre, int capacidad) {

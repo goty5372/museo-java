@@ -1,5 +1,7 @@
 package servicio;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
 import modelo.*;
 
 import java.time.LocalDate;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 // clase que maneja todos los datos del sistema
+@ApplicationScoped
 public class SistemaMuseoService {
 
     private Map<Integer, Museo> museos = new HashMap<>();
@@ -237,6 +240,7 @@ public class SistemaMuseoService {
 
     // ---------- datos de ejemplo (los mismos del script SQL) ----------
 
+    @PostConstruct
     public void cargarDatosDePrueba() {
         registrarMuseo("Museo Nacional de Colombia",
                 "Museo fundado en 1823 en Bogota, con colecciones de arte, historia y arqueologia",
