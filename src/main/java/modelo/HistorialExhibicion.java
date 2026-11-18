@@ -29,6 +29,17 @@ public class HistorialExhibicion {
         this.fechaFin = null;
     }
 
+    HistorialExhibicion(int id, Obra obra, SalaExposicion sala, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        this.id = id;
+        if (id >= contador) {
+            contador = id + 1;
+        }
+        this.obra = obra;
+        this.sala = sala;
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+    }
+
     void cerrar(LocalDateTime fecha) {
         if (fechaFin != null) {
             throw new IllegalStateException("Este periodo ya estaba cerrado");

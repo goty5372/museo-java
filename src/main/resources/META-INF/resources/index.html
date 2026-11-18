@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración de Museos</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <div class="app">
+    <!-- menu lateral -->
+    <aside class="lateral">
+      <div class="marca">
+        <span class="logo">M</span>
+        <div>
+          <h2>Museos</h2>
+          <p>Panel de administración</p>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="menu">
+          <li><button data-seccion="inicio" class="activo">Inicio</button></li>
+          <li><button data-seccion="museos">Museos</button></li>
+          <li><button data-seccion="salas">Salas</button></li>
+          <li><button data-seccion="objetos">Objetos</button></li>
+          <li><button data-seccion="categorias">Categorías</button></li>
+          <li><button data-seccion="artistas">Artistas</button></li>
+          <li><button data-seccion="historial">Historial</button></li>
+          <li><button data-seccion="recorridos">Recorridos</button></li>
+        </ul>
+      </nav>
+
+      <button class="restaurar" onclick="restaurarDatos()">Restaurar datos de ejemplo</button>
+    </aside>
+
+    <main>
+
+      <!-- INICIO -->
+      <section id="inicio" class="seccion activa">
+        <header class="cabecera">
+          <h1>Inicio</h1>
+          <p>Resumen general de la colección.</p>
+        </header>
+        <div class="resumen" id="resumen"></div>
+        <div class="panel">
+          <h2>Objetos que necesitan restauración</h2>
+          <p class="gris">Objetos con menos del 60% de conservación.</p>
+          <ul class="lista-simple" id="lista-riesgo"></ul>
+        </div>
+      </section>
+
+      <!-- MUSEOS -->
+      <section id="museos" class="seccion">
+        <header class="cabecera">
+          <h1>Museos</h1>
+          <p>Museos registrados, su ubicación y página web.</p>
+        </header>
+        <div class="filtros">
+          <div class="filtro">
+            <label for="buscar-museo">Buscar</label>
+            <input type="search" id="buscar-museo" placeholder="Nombre del museo">
+          </div>
+          <button class="boton" onclick="nuevoMuseo()">Nuevo museo</button>
+        </div>
+        <div class="tarjetas" id="lista-museos"></div>
+      </section>
+
+      <!-- SALAS -->
+      <section id="salas" class="seccion">
+        <header class="cabecera">
+          <h1>Salas de exposición</h1>
+          <p>Salas de cada museo con su aforo.</p>
+        </header>
+        <div class="filtros">
+          <div class="filtro">
+            <label for="filtro-sala-museo">Museo</label>
+            <select id="filtro-sala-museo"></select>
+          </div>
+          <div class="filtro">
+            <label for="buscar-sala">Buscar</label>
+            <input type="search" id="buscar-sala" placeholder="Nombre de la sala">
+          </div>
+          <button class="boton" onclick="nuevaSala()">Nueva sala</button>
+        </div>
+        <div class="tarjetas" id="lista-salas"></div>
+      </section>
+
+      <!-- OBJETOS -->
+      <section id="objetos" class="seccion">
+        <header class="cabecera">
+          <h1>Objetos</h1>
+          <p>Catálogo de piezas con su estado de conservación y ubicación actual.</p>
+        </header>
+        <div class="filtros">
+          <div class="filtro">
+            <label for="buscar-objeto">Buscar</label>
+            <input type="search" id="buscar-objeto" placeholder="Nombre o artista">
+          </div>
+          <div class="filtro">
+            <label for="filtro-categoria">Categoría</label>
+            <select id="filtro-categoria"></select>
+          </div>
+          <div class="filtro">
+            <label for="filtro-museo">Museo</label>
+            <select id="filtro-museo"></select>
+          </div>
+          <div class="filtro">
+            <label for="filtro-estado">Conservación</label>
+            <select id="filtro-estado">
+              <option value="">Todos</option>
+              <option value="bueno">Buen estado (80% o más)</option>
+              <option value="regular">Regular (60% a 79%)</option>
+              <option value="riesgo">En riesgo (menos de 60%)</option>
+            </select>
+          </div>
+          <button class="boton" onclick="nuevoObjeto()">Nuevo objeto</button>
+        </div>
+        <p class="contador" id="contador-objetos"></p>
+        <div class="tarjetas" id="lista-objetos"></div>
+      </section>
+
+      <!-- CATEGORIAS -->
+      <section id="categorias" class="seccion">
+        <header class="cabecera">
+          <h1>Categorías</h1>
+          <p>Clasificación de los objetos de la colección.</p>
+        </header>
+        <div class="filtros">
+          <button class="boton" onclick="nuevaCategoria()">Nueva categoría</button>
+        </div>
+        <div class="contenedor-tabla">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Objetos</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-categorias"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ARTISTAS -->
+      <section id="artistas" class="seccion">
+        <header class="cabecera">
+          <h1>Artistas</h1>
+          <p>Autores de las obras, con su biografía y nacionalidad.</p>
+        </header>
+        <div class="filtros">
+          <div class="filtro">
+            <label for="buscar-artista">Buscar</label>
+            <input type="search" id="buscar-artista" placeholder="Nombre o nacionalidad">
+          </div>
+          <button class="boton" onclick="nuevoArtista()">Nuevo artista</button>
+        </div>
+        <div class="tarjetas" id="lista-artistas"></div>
+      </section>
+
+      <!-- HISTORIAL -->
+      <section id="historial" class="seccion">
+        <header class="cabecera">
+          <h1>Historial de exhibición</h1>
+          <p>Salas en las que ha estado cada objeto y en qué fechas.</p>
+        </header>
+        <div class="filtros">
+          <div class="filtro">
+            <label for="filtro-historial">Objeto</label>
+            <select id="filtro-historial"></select>
+          </div>
+          <button class="boton" onclick="abrirTraslado()">Trasladar objeto</button>
+        </div>
+        <div id="linea-tiempo"></div>
+        <div class="contenedor-tabla">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Objeto</th>
+                <th>Sala</th>
+                <th>Museo</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Días</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-historial"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- RECORRIDOS -->
+      <section id="recorridos" class="seccion">
+        <header class="cabecera">
+          <h1>Recorridos guiados</h1>
+          <p>Visitas guiadas y el orden en que pasan por las salas.</p>
+        </header>
+        <div class="filtros">
+          <button class="boton" onclick="nuevoRecorrido()">Nuevo recorrido</button>
+        </div>
+        <div class="tarjetas" id="lista-recorridos"></div>
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- ================= MODALES ================= -->
+
+  <dialog id="modal-museo">
+    <form id="form-museo">
+      <h2 id="titulo-museo">Nuevo museo</h2>
+      <div class="campos">
+        <div class="campo completo">
+          <label for="museo-nombre">Nombre *</label>
+          <input type="text" id="museo-nombre" required>
+        </div>
+        <div class="campo completo">
+          <label for="museo-descripcion">Descripción</label>
+          <textarea id="museo-descripcion" rows="3"></textarea>
+        </div>
+        <div class="campo">
+          <label for="museo-latitud">Latitud</label>
+          <input type="number" id="museo-latitud" step="any" min="-90" max="90">
+        </div>
+        <div class="campo">
+          <label for="museo-longitud">Longitud</label>
+          <input type="number" id="museo-longitud" step="any" min="-180" max="180">
+        </div>
+        <div class="campo completo">
+          <label for="museo-url">Página web</label>
+          <input type="url" id="museo-url" placeholder="https://">
+        </div>
+      </div>
+      <div class="botones-modal">
+        <button type="button" class="boton-borde cerrar-modal">Cancelar</button>
+        <button type="submit" class="boton">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-sala">
+    <form id="form-sala">
+      <h2 id="titulo-sala">Nueva sala</h2>
+      <div class="campos">
+        <div class="campo completo">
+          <label for="sala-museo">Museo *</label>
+          <select id="sala-museo" required></select>
+        </div>
+        <div class="campo completo">
+          <label for="sala-nombre">Nombre *</label>
+          <input type="text" id="sala-nombre" required>
+        </div>
+        <div class="campo completo">
+          <label for="sala-descripcion">Descripción</label>
+          <textarea id="sala-descripcion" rows="3"></textarea>
+        </div>
+        <div class="campo">
+          <label for="sala-capacidad">Aforo (personas) *</label>
+          <input type="number" id="sala-capacidad" min="1" required>
+        </div>
+      </div>
+      <div class="botones-modal">
+        <button type="button" class="boton-borde cerrar-modal">Cancelar</button>
+        <button type="submit" class="boton">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-objeto">
+    <form id="form-objeto">
+      <h2 id="titulo-objeto">Nuevo objeto</h2>
+      <div class="campos">
+        <div class="campo completo">
+          <label for="objeto-nombre">Nombre *</label>
+          <input type="text" id="objeto-nombre" required>
+        </div>
+        <div class="campo completo">
+          <label for="objeto-descripcion">Descripción</label>
+          <textarea id="objeto-descripcion" rows="2"></textarea>
+        </div>
+        <div class="campo completo">
+          <label for="objeto-imagen">URL de la imagen</label>
+          <input type="url" id="objeto-imagen" placeholder="https://">
+        </div>
+        <div class="campo">
+          <label for="objeto-creacion">Fecha de creación</label>
+          <input type="date" id="objeto-creacion">
+        </div>
+        <div class="campo">
+          <label for="objeto-adquisicion">Fecha de adquisición</label>
+          <input type="date" id="objeto-adquisicion">
+        </div>
+        <div class="campo">
+          <label for="objeto-conservacion">Conservación (%) *</label>
+          <input type="number" id="objeto-conservacion" min="0" max="100" required>
+        </div>
+        <div class="campo">
+          <label for="objeto-categoria">Categoría *</label>
+          <select id="objeto-categoria" required></select>
+        </div>
+        <div class="campo">
+          <label for="objeto-artista">Artista</label>
+          <select id="objeto-artista"></select>
+        </div>
+        <div class="campo">
+          <label for="objeto-sala">Sala actual *</label>
+          <select id="objeto-sala" required></select>
+        </div>
+      </div>
+      <div class="botones-modal">
+        <button type="button" class="boton-borde cerrar-modal">Cancelar</button>
+        <button type="submit" class="boton">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-categoria">
+    <form id="form-categoria">
+      <h2 id="titulo-categoria">Nueva categoría</h2>
+      <div class="campos">
+        <div class="campo completo">
+          <label for="categoria-nombre">Nombre *</label>
+          <input type="text" id="categoria-nombre" required>
+        </div>
+        <div class="campo completo">
+          <label for="categoria-descripcion">Descripción</label>
+          <textarea id="categoria-descripcion" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="botones-modal">
+        <button type="button" class="boton-borde cerrar-modal">Cancelar</button>
+        <button type="submit" class="boton">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-artista">
+    <form id="form-artista">
+      <h2 id="titulo-artista">Nuevo artista</h2>
+      <div class="campos">
+        <div class="campo completo">
+          <label for="artista-nombre">Nombre *</label>
+          <input type="text" id="artista-nombre" required>
+        </div>
+        <div class="campo completo">
+          <label for="artista-nacionalidad">Nacionalidad</label>
+          <input type="text" id="artista-nacionalidad">
+        </div>
+        <div class="campo completo">
+          <label for="artista-biografia">Biografía</label>
+          <textarea id="artista-biografia" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="botones-modal">
+        <button type="button" class="boton-borde cerrar-modal">Cancelar</button>
+        <button type="submit" class="boton">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-traslado">
+    <form id="form-traslado">
+      <h2>Trasladar objeto</h2>
+      <div class="campos">
+        <div class="campo completo">
+          <label for="traslado-objeto">Objeto *</label>
+          <select id="traslado-objeto" required></select>
+          <small id="traslado-actual"></small>
+        </div>
+        <div class="campo">
+          <label for="traslado-sala">Sala de destino *</label>
+          <select id="traslado-sala" required></select>
+        </div>
+        <div class="campo">
+          <label for="traslado-fecha">Fecha del traslado *</label>
+          <input type="datetime-local" id="traslado-fecha" required>
+        </div>
+      </div>
+      <div class="botones-modal">
+        <button type="button" class="boton-borde cerrar-modal">Cancelar</button>
+        <button type="submit" class="boton">Trasladar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-recorrido">
+    <form id="form-recorrido">
+      <h2 id="titulo-recorrido">Nuevo recorrido</h2>
+      <div class="campos">
+        <div class="campo completo">
+          <label for="recorrido-nombre">Nombre *</label>
+          <input type="text" id="recorrido-nombre" required>
+        </div>
+        <div class="campo completo">
+          <label for="recorrido-descripcion">Descripción</label>
+          <textarea id="recorrido-descripcion" rows="2"></textarea>
+        </div>
+        <div class="campo">
+          <label for="recorrido-inicio">Inicio *</label>
+          <input type="datetime-local" id="recorrido-inicio" required>
+        </div>
+        <div class="campo">
+          <label for="recorrido-fin">Fin *</label>
+          <input type="datetime-local" id="recorrido-fin" required>
+        </div>
+        <div class="campo completo">
+          <label for="recorrido-url">Página web</label>
+          <input type="url" id="recorrido-url" placeholder="https://">
+        </div>
+        <div class="campo completo caja-salas">
+          <label for="recorrido-sala">Salas del recorrido (en orden) *</label>
+          <div class="agregar-sala">
+            <select id="recorrido-sala"></select>
+            <button type="button" class="boton-borde" onclick="agregarSalaRecorrido()">Agregar</button>
+          </div>
+          <ol class="orden-salas" id="orden-salas"></ol>
+        </div>
+      </div>
+      <div class="botones-modal">
+        <button type="button" class="boton-borde cerrar-modal">Cancelar</button>
+        <button type="submit" class="boton">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/datos.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

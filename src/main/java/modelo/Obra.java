@@ -80,6 +80,18 @@ public class Obra implements Reportable {
         return Collections.unmodifiableList(historial);
     }
 
+    public void reemplazarHistorial(List<HistorialExhibicion> nuevoHistorial, SalaExposicion salaActual) {
+        this.historial.clear();
+        this.historial.addAll(nuevoHistorial);
+        if (salaActual != null) {
+            this.salaActual = salaActual;
+        }
+    }
+
+    public HistorialExhibicion crearRegistroHistorial(int idHist, SalaExposicion sala, LocalDateTime inicio, LocalDateTime fin) {
+        return new HistorialExhibicion(idHist, this, sala, inicio, fin);
+    }
+
     public int getId() {
         return id;
     }
