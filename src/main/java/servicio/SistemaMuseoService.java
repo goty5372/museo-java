@@ -1,9 +1,15 @@
 package servicio;
 
+import config.ConexionBD;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import modelo.*;
 
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,7 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// clase que maneja todos los datos del sistema
+// clase que maneja todos los datos del sistema y sincroniza con MySQL (XAMPP)
 @ApplicationScoped
 public class SistemaMuseoService {
 
@@ -32,12 +38,29 @@ public class SistemaMuseoService {
     private int idObra = 1;
     private int idRecorrido = 1;
 
+    private boolean sincronizarBD = false;
+
     // ---------- registrar ----------
 
     public Museo registrarMuseo(String nombre, String descripcion, Double latitud, Double longitud, String url) {
         Museo museo = new Museo(idMuseo, nombre, descripcion, latitud, longitud, url);
         museos.put(museo.getId(), museo);
         idMuseo++;
+
+        if (sincronizarBD) {
+            try (Connection conn = ConexionBD.obtenerConexion();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "INSERT INTO museo (id, nombre, descripcion, latitud, longitud, url_pagina) VALUES (?, ?, ?, ?, ?, ?)")) {
+                ps.setInt(1, museo.getId());
+                ps.setString(2, museo.getNombre());
+                ps.setString(3, museo.getDescripcion());
+                if (museo.getLatitud() != null) ps.setDouble(4, museo.getLatitud()); else ps.setNull(4, Types.DOUBLE);
+                if (museo.getLongitud() != null) ps.setDouble(5, museo.getLongitud()); else ps.setNull(5, Types.DOUBLE);
+                ps.setString(6, museo.getUrlPagina());
+                ps.executeUpdate();
+            } catch (Exception ignored) {
+            }
+        }
         return museo;
     }
 
@@ -47,6 +70,20 @@ public class SistemaMuseoService {
         museo.agregarSala(sala);
         salas.put(sala.getId(), sala);
         idSala++;
+
+        if (sincronizarBD) {
+            try (Connection conn = ConexionBD.obtenerConexion();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "INSERT INTO sala_exposicion (id, id_museo, nombre, descripcion, capacidad) VALUES (?, ?, ?, ?, ?)")) {
+                ps.setInt(1, sala.getId());
+                ps.setInt(2, idDelMuseo);
+                ps.setString(3, sala.getNombre());
+                ps.setString(4, sala.getDescripcion());
+                ps.setInt(5, sala.getCapacidad());
+                ps.executeUpdate();
+            } catch (Exception ignored) {
+            }
+        }
         return sala;
     }
 
@@ -59,6 +96,18 @@ public class SistemaMuseoService {
         Categoria categoria = new Categoria(idCategoria, nombre, descripcion);
         categorias.put(categoria.getId(), categoria);
         idCategoria++;
+
+        if (sincronizarBD) {
+            try (Connection conn = ConexionBD.obtenerConexion();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "INSERT INTO categoria (id, nombre, descripcion) VALUES (?, ?, ?)")) {
+                ps.setInt(1, categoria.getId());
+                ps.setString(2, categoria.getNombre());
+                ps.setString(3, categoria.getDescripcion());
+                ps.executeUpdate();
+            } catch (Exception ignored) {
+            }
+        }
         return categoria;
     }
 
@@ -66,6 +115,19 @@ public class SistemaMuseoService {
         Artista artista = new Artista(idArtista, nombre, nacionalidad, biografia);
         artistas.put(artista.getId(), artista);
         idArtista++;
+
+        if (sincronizarBD) {
+            try (Connection conn = ConexionBD.obtenerConexion();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "INSERT INTO artista (id, nombre, nacionalidad, biografia) VALUES (?, ?, ?, ?)")) {
+                ps.setInt(1, artista.getId());
+                ps.setString(2, artista.getNombre());
+                ps.setString(3, artista.getNacionalidad());
+                ps.setString(4, artista.getBiografia());
+                ps.executeUpdate();
+            } catch (Exception ignored) {
+            }
+        }
         return artista;
     }
 
@@ -85,6 +147,34 @@ public class SistemaMuseoService {
 
         obras.put(obra.getId(), obra);
         idObra++;
+
+        if (sincronizarBD) {
+            try (Connection conn = ConexionBD.obtenerConexion()) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO obra (id, nombre, descripcion, url_imagen, fecha_creacion, fecha_adquisicion, porcentaje_conservacion, estado_conservacion, id_categoria, id_artista, id_sala_actual) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    ps.setInt(1, obra.getId());
+                    ps.setString(2, obra.getNombre());
+                    ps.setString(3, obra.getDescripcion());
+                    ps.setString(4, obra.getUrlImagen());
+                    if (fechaCreacion != null) ps.setDate(5, Date.valueOf(fechaCreacion)); else ps.setNull(5, Types.DATE);
+                    if (fechaAdquisicion != null) ps.setDate(6, Date.valueOf(fechaAdquisicion)); else ps.setNull(6, Types.DATE);
+                    ps.setInt(7, obra.getPorcentajeConservacion());
+                    ps.setString(8, obra.getEstadoConservacion().getNombre());
+                    ps.setInt(9, idDeCategoria);
+                    if (idDelArtista != null) ps.setInt(10, idDelArtista); else ps.setNull(10, Types.INTEGER);
+                    ps.setInt(11, idDeSala);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement psHist = conn.prepareStatement(
+                        "INSERT INTO historial_exhibicion (id_obra, id_sala, fecha_entrada, fecha_salida) VALUES (?, ?, ?, NULL)")) {
+                    psHist.setInt(1, obra.getId());
+                    psHist.setInt(2, idDeSala);
+                    psHist.setTimestamp(3, Timestamp.valueOf(fechaIngreso));
+                    psHist.executeUpdate();
+                }
+            } catch (Exception ignored) {
+            }
+        }
         return obra;
     }
 
@@ -93,6 +183,21 @@ public class SistemaMuseoService {
         RecorridoGuiado recorrido = new RecorridoGuiado(idRecorrido, nombre, descripcion, inicio, fin, url);
         recorridos.put(recorrido.getId(), recorrido);
         idRecorrido++;
+
+        if (sincronizarBD) {
+            try (Connection conn = ConexionBD.obtenerConexion();
+                 PreparedStatement ps = conn.prepareStatement(
+                         "INSERT INTO recorrido_guiado (id, nombre, descripcion, fecha_inicio, fecha_fin, url_pagina) VALUES (?, ?, ?, ?, ?, ?)")) {
+                ps.setInt(1, recorrido.getId());
+                ps.setString(2, recorrido.getNombre());
+                ps.setString(3, recorrido.getDescripcion());
+                ps.setTimestamp(4, Timestamp.valueOf(inicio));
+                ps.setTimestamp(5, Timestamp.valueOf(fin));
+                ps.setString(6, recorrido.getUrlPagina());
+                ps.executeUpdate();
+            } catch (Exception ignored) {
+            }
+        }
         return recorrido;
     }
 
@@ -102,18 +207,70 @@ public class SistemaMuseoService {
         Obra obra = buscarObra(idDeObra);
         SalaExposicion sala = buscarSala(idDeSala);
         obra.moverASala(sala, fecha);
+
+        if (sincronizarBD) {
+            try (Connection conn = ConexionBD.obtenerConexion()) {
+                try (PreparedStatement psClose = conn.prepareStatement(
+                        "UPDATE historial_exhibicion SET fecha_salida = ? WHERE id_obra = ? AND fecha_salida IS NULL")) {
+                    psClose.setTimestamp(1, Timestamp.valueOf(fecha));
+                    psClose.setInt(2, idDeObra);
+                    psClose.executeUpdate();
+                }
+                try (PreparedStatement psInsert = conn.prepareStatement(
+                        "INSERT INTO historial_exhibicion (id_obra, id_sala, fecha_entrada, fecha_salida) VALUES (?, ?, ?, NULL)")) {
+                    psInsert.setInt(1, idDeObra);
+                    psInsert.setInt(2, idDeSala);
+                    psInsert.setTimestamp(3, Timestamp.valueOf(fecha));
+                    psInsert.executeUpdate();
+                }
+                try (PreparedStatement psUpdate = conn.prepareStatement(
+                        "UPDATE obra SET id_sala_actual = ? WHERE id = ?")) {
+                    psUpdate.setInt(1, idDeSala);
+                    psUpdate.setInt(2, idDeObra);
+                    psUpdate.executeUpdate();
+                }
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     public void agregarSalaARecorrido(int idDelRecorrido, int idDeSala) {
-        buscarRecorrido(idDelRecorrido).agregarSala(buscarSala(idDeSala));
+        RecorridoGuiado recorrido = buscarRecorrido(idDelRecorrido);
+        recorrido.agregarSala(buscarSala(idDeSala));
+        sincronizarSalasRecorridoBD(recorrido);
     }
 
     public void cambiarOrdenRecorrido(int idDelRecorrido, int posicionActual, int nuevaPosicion) {
-        buscarRecorrido(idDelRecorrido).cambiarOrden(posicionActual, nuevaPosicion);
+        RecorridoGuiado recorrido = buscarRecorrido(idDelRecorrido);
+        recorrido.cambiarOrden(posicionActual, nuevaPosicion);
+        sincronizarSalasRecorridoBD(recorrido);
     }
 
     public void quitarSalaDeRecorrido(int idDelRecorrido, int posicion) {
-        buscarRecorrido(idDelRecorrido).quitarSala(posicion);
+        RecorridoGuiado recorrido = buscarRecorrido(idDelRecorrido);
+        recorrido.quitarSala(posicion);
+        sincronizarSalasRecorridoBD(recorrido);
+    }
+
+    private void sincronizarSalasRecorridoBD(RecorridoGuiado recorrido) {
+        if (!sincronizarBD) return;
+        try (Connection conn = ConexionBD.obtenerConexion()) {
+            try (PreparedStatement psDel = conn.prepareStatement(
+                    "DELETE FROM detalle_recorrido_sala WHERE id_recorrido = ?")) {
+                psDel.setInt(1, recorrido.getId());
+                psDel.executeUpdate();
+            }
+            try (PreparedStatement psIns = conn.prepareStatement(
+                    "INSERT INTO detalle_recorrido_sala (id_recorrido, id_sala, numero_orden) VALUES (?, ?, ?)")) {
+                for (DetalleRecorridoSala d : recorrido.getDetalles()) {
+                    psIns.setInt(1, recorrido.getId());
+                    psIns.setInt(2, d.getSala().getId());
+                    psIns.setInt(3, d.getNumeroOrden());
+                    psIns.executeUpdate();
+                }
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     // ---------- buscar ----------
@@ -305,5 +462,7 @@ public class SistemaMuseoService {
         agregarSalaARecorrido(2, 4);
         agregarSalaARecorrido(2, 5);
         agregarSalaARecorrido(2, 6);
+
+        sincronizarBD = true;
     }
 }

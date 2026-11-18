@@ -1,10 +1,10 @@
-# Sistema de Administración de Museos - API REST en Quarkus
+# Sistema de Administración de Museos - API REST en Quarkus y MySQL (XAMPP)
 
 ## Descripción general
 
 El **Sistema de Administración de Museos** es una aplicación backend y API REST desarrollada para la gestión integral de museos, salas de exposición, colecciones de obras de arte, artistas, categorías, historial de traslados y recorridos guiados, inspirada en instituciones culturales como el **Museo Nacional de Colombia** y el **Museo del Oro**.
 
-El sistema permite registrar, consultar y administrar toda la información museográfica mediante servicios web RESTful construidos con **Quarkus 3.6**, **RESTEasy Reactive (JAX-RS)** e inyección de dependencias **CDI (ArC)**. Además, incorpora documentación interactiva mediante **Swagger UI (OpenAPI)** y aplica principios fundamentales de **Programación Orientada a Objetos (POO)** como encapsulamiento, composición, asociación y polimorfismo.
+El sistema permite registrar, consultar y administrar toda la información museográfica mediante servicios web RESTful construidos con **Quarkus 3.6**, **RESTEasy Reactive (JAX-RS)**, inyección de dependencias **CDI (ArC)** y una base de datos en **MySQL / MariaDB (XAMPP)**, permitiendo que los datos y cambios realizados desde la API se almacenen y actualicen en la base de datos. Además, incorpora documentación interactiva mediante **Swagger UI (OpenAPI)** y aplica principios fundamentales de **Programación Orientada a Objetos (POO)**.
 
 ---
 
@@ -12,7 +12,7 @@ El sistema permite registrar, consultar y administrar toda la información museo
 
 El objetivo principal del proyecto es construir un sistema estructurado y escalable que permita centralizar y organizar la información de colecciones culturales y museográficas, facilitando el control del inventario de obras, su ubicación por salas, el seguimiento de su estado de conservación y la planeación de recorridos guiados.
 
-El sistema busca simular una herramienta institucional donde los datos puedan ser consultados, registrados, validados y reportados de manera organizada a través de endpoints HTTP estandarizados en formato JSON.
+El sistema busca simular una herramienta institucional donde los datos puedan ser consultados, registrados, validados y reportados de manera organizada y persistente en **MySQL (XAMPP)**.
 
 ---
 
@@ -43,7 +43,7 @@ El módulo de obras permite gestionar el catálogo artístico y arqueológico ju
 - Nombre, descripción, URL de imagen, categoría y artista (con soporte para obras de autor **Anónimo**).
 - Validación de coherencia cronológica entre fecha de creación y fecha de adquisición.
 - Registro automático del primer ingreso a sala en el historial de exhibición.
-- Traslado de obras entre salas (`PUT /obras/{id}/mover`), cerrando automáticamente el periodo de exhibición anterior y abriendo uno nuevo con fecha y hora.
+- Traslado de obras entre salas (`PUT /obras/{id}/mover`), cerrando automáticamente el periodo de exhibición anterior y abriendo uno nuevo con fecha y hora tanto en el sistema como en MySQL.
 
 ### Artistas y Categorías
 
@@ -88,28 +88,31 @@ El módulo de reportes consolida indicadores clave del sistema:
 
 | Tecnología | Uso |
 |---|---|
-| Java 17 | Lenguaje principal del proyecto |
+| Java 17+ | Lenguaje principal del proyecto |
 | Quarkus 3.6.0 | Framework principal para el desarrollo del backend |
+| MySQL / MariaDB (XAMPP) | Motor de base de datos relacional |
+| SQL | Creación, consulta y manipulación de datos |
 | RESTEasy Reactive | Exposición de endpoints RESTful con soporte JSON (Jackson) |
 | Quarkus ArC (CDI) | Inyección de dependencias y gestión del ciclo de vida (`@ApplicationScoped`) |
 | SmallRye OpenAPI | Generación de especificación OpenAPI y consola interactiva Swagger UI |
 | Maven | Gestión del proyecto, compilación y dependencias |
-| Visual Studio Code / IDE Java | Entorno de desarrollo utilizado |
+| Visual Studio Code | Editor de código utilizado |
 | GitHub | Publicación y control de versiones |
 
 ---
 
 ## Librerías y dependencias principales
 
-El proyecto utiliza Maven para administrar las dependencias y plugins necesarios.
+El proyecto utiliza Maven para administrar las dependencias necesarias.
 
 Dependencias principales:
 
-- `quarkus-resteasy-reactive-jackson` (Servicios REST y serialización JSON)
-- `quarkus-arc` (Contenedor CDI para inyección de dependencias)
-- `quarkus-smallrye-openapi` (Documentación OpenAPI y Swagger UI)
-- `quarkus-maven-plugin` (Ejecución en modo desarrollo con *hot-reload* y empaquetado)
-- `maven-compiler-plugin` (Compilación configurada para Java 17 con soporte de parámetros)
+- `quarkus-resteasy-reactive-jackson`
+- `quarkus-arc`
+- `quarkus-smallrye-openapi`
+- `mysql-connector-j` (MySQL JDBC Driver)
+- `quarkus-maven-plugin`
+- `maven-compiler-plugin`
 
 Estas dependencias se encuentran configuradas en el archivo:
 
@@ -119,23 +122,32 @@ pom.xml
 
 ---
 
-## Gestión de datos y diseño orientado a objetos
+## Motor de base de datos
 
-El proyecto centraliza la lógica de negocio y el almacenamiento en memoria dentro del servicio `@ApplicationScoped`:
+El proyecto utiliza **MySQL / MariaDB (XAMPP)** como motor de base de datos.
 
-```text
-src/main/java/servicio/SistemaMuseoService.java
+Nombre de la base de datos:
+
+```sql
+sistema_museos
 ```
 
-Al iniciar la aplicación, el método anotado con `@PostConstruct` (`cargarDatosDePrueba()`) inicializa automáticamente el catálogo institucional con museos, salas, categorías, artistas, obras, traslados históricos y recorridos guiados listos para ser consultados.
+La base de datos contiene las siguientes tablas:
 
-Principios de **Programación Orientada a Objetos (POO)** aplicados en el modelo:
+- `museo` (Museos registrados y su ubicación geográfica).
+- `sala_exposicion` (Salas asociadas a cada museo y su capacidad).
+- `categoria` (Categorías de las piezas de arte).
+- `artista` (Autores registrados en el sistema).
+- `obra` (Catálogo de obras con porcentaje y estado de conservación).
+- `historial_exhibicion` (Trazabilidad de entradas y salidas de obras por sala).
+- `recorrido_guiado` (Recorridos programados con fechas de inicio y fin).
+- `detalle_recorrido_sala` (Orden de visita de salas dentro de cada recorrido).
 
-- **Composición:** `Museo` contiene y gestiona su colección de `SalaExposicion`; `RecorridoGuiado` administra su lista ordenada de `DetalleRecorridoSala`; `Obra` gestiona su lista de `HistorialExhibicion`.
-- **Asociación:** `Obra` se relaciona con `Artista`, `Categoria` y `SalaExposicion`.
-- **Polimorfismo:** La interfaz `Reportable` define el contrato `generarReporte()`, implementado de forma específica por `Museo`, `Obra` y `RecorridoGuiado`.
-- **Encapsulamiento y validaciones:** Todas las entidades validan la integridad de sus datos en constructores y *setters*, lanzando `IllegalArgumentException` que `ErrorMapper` transforma automáticamente en respuestas HTTP `400 Bad Request` en formato JSON.
-- **Enumeraciones con comportamiento:** `EstadoConservacion` declara el método abstracto `getRecomendacion()`, sobrescrito individualmente por cada constante (`OPTIMO`, `REGULAR`, `CRITICO`).
+El script SQL para **XAMPP / phpMyAdmin** se encuentra en la carpeta:
+
+```text
+database/museo_xampp_mysql.sql
+```
 
 ---
 
@@ -143,9 +155,15 @@ Principios de **Programación Orientada a Objetos (POO)** aplicados en el modelo
 
 ```text
 museo-java/
+├── database/
+│   └── museo_xampp_mysql.sql
+│
 ├── src/
 │   └── main/
 │       ├── java/
+│       │   ├── config/
+│       │   │   └── ConexionBD.java
+│       │   │
 │       │   ├── dto/
 │       │   │   ├── AgregarSalaRequest.java
 │       │   │   ├── CambiarOrdenRequest.java
@@ -186,6 +204,7 @@ museo-java/
 │       └── resources/
 │           └── application.properties
 │
+├── iniciar.bat
 ├── pom.xml
 └── README.md
 ```
@@ -225,55 +244,14 @@ museo-java/
 
 ---
 
-## Ejemplos de uso de la API
-
-### Registrar un museo (`POST /museos`)
-
-```json
-{
-  "nombre": "Museo de Arte Moderno de Bogotá",
-  "descripcion": "Espacio cultural dedicado al arte moderno y contemporáneo",
-  "latitud": 4.6097,
-  "longitud": -74.0817,
-  "urlPagina": "https://www.mambogota.com"
-}
-```
-
-### Registrar una obra (`POST /obras`)
-
-```json
-{
-  "nombre": "El Abrazo",
-  "descripcion": "Óleo sobre lienzo",
-  "urlImagen": "https://example.org/imagenes/el-abrazo.jpg",
-  "fechaCreacion": "1980-05-10",
-  "fechaAdquisicion": "1995-08-20",
-  "porcentajeConservacion": 85,
-  "idCategoria": 1,
-  "idArtista": 1,
-  "idSala": 1
-}
-```
-
-### Mover una obra de sala (`PUT /obras/1/mover`)
-
-```json
-{
-  "idSala": 3,
-  "fecha": "2026-11-18T10:00:00"
-}
-```
-
----
-
 ## Requisitos previos
 
 Antes de ejecutar el proyecto, se recomienda tener instalado:
 
 - **Java JDK 17** o superior.
 - **Apache Maven 3.8+**.
-- **Visual Studio Code**, IntelliJ IDEA o un IDE compatible con proyectos Maven y Java.
-- Navegador web, **Postman**, **Insomnia** o `curl` para probar los endpoints REST.
+- **XAMPP** (con los servicios **Apache** y **MySQL** activos).
+- **Visual Studio Code** o un IDE compatible con Java.
 
 ---
 
@@ -284,39 +262,63 @@ Antes de ejecutar el proyecto, se recomienda tener instalado:
 Si el proyecto está en GitHub, se puede clonar con:
 
 ```bash
-git clone https://github.com/goty5372/museo-java.git
+git clone https://github.com/Jeizxon/Museo_quarkus.git
 ```
 
 Luego entrar a la carpeta del proyecto:
 
 ```bash
-cd museo-java
+cd Museo_quarkus
 ```
 
 También se puede descargar el repositorio como archivo `.zip` desde GitHub y descomprimirlo.
 
 ---
 
-### 2. Verificar la configuración de la aplicación
+### 2. Iniciar XAMPP y cargar la base de datos en phpMyAdmin
+
+1. Abrir el **XAMPP Control Panel** e iniciar los módulos **Apache** y **MySQL** (*Start*).
+2. Entrar desde el navegador a **phpMyAdmin**:
+
+```text
+http://localhost/phpmyadmin
+```
+
+3. Ir a la pestaña **SQL** o **Importar**, abrir el archivo:
+
+```text
+database/museo_xampp_mysql.sql
+```
+
+4. Ejecutar el script para crear automáticamente la base de datos `sistema_museos` con sus 8 tablas y los registros iniciales de prueba.
+
+---
+
+### 3. Configurar la conexión a MySQL (XAMPP)
 
 Abrir el archivo:
 
 ```text
-src/main/resources/application.properties
+src/main/java/config/ConexionBD.java
 ```
 
-La aplicación está configurada por defecto para ejecutarse en el puerto `8080` y habilitar siempre la interfaz de Swagger UI:
+La aplicación está configurada por defecto para conectarse al servidor MySQL de XAMPP en el puerto `3306` con el usuario `root` sin contraseña:
 
-```properties
-quarkus.application.name=Sistema de Administracion de Museos
-quarkus.http.port=8080
-quarkus.swagger-ui.always-include=true
-quarkus.swagger-ui.path=/swagger-ui
+```java
+jdbc:mysql://localhost:3306/sistema_museos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+```
+
+También se puede personalizar la conexión sin editar código mediante variables de entorno:
+
+```text
+MUSEO_DB_URL
+MUSEO_DB_USER
+MUSEO_DB_PASSWORD
 ```
 
 ---
 
-### 3. Ejecutar el proyecto en modo desarrollo
+### 4. Ejecutar el proyecto
 
 Desde la terminal ubicada en la carpeta raíz del proyecto, ejecutar:
 
@@ -324,90 +326,69 @@ Desde la terminal ubicada en la carpeta raíz del proyecto, ejecutar:
 mvn quarkus:dev
 ```
 
-Este comando compila el proyecto, carga los datos iniciales de prueba y activa la recarga en caliente (*hot-reload*) ante cualquier cambio en el código.
+O en Windows haciendo doble clic directamente sobre el archivo:
 
----
-
-### 4. Compilar y ejecutar como paquete JAR (opcional)
-
-Si se desea generar el paquete ejecutable de la aplicación:
-
-```bash
-mvn clean package
-```
-
-Y luego iniciarlo con:
-
-```bash
-java -jar target/quarkus-app/quarkus-run.jar
+```text
+iniciar.bat
 ```
 
 ---
 
-### 5. Consultar la aplicación y Swagger UI
+### 5. Consultar la API y Swagger UI
 
 Una vez iniciada la aplicación, se puede acceder desde el navegador a las siguientes rutas:
 
 | Recurso | URL |
 |---|---|
+| Consola interactiva **Swagger UI** | `http://localhost:8080/swagger-ui` |
+| Panel **phpMyAdmin (XAMPP)** | `http://localhost/phpmyadmin` |
 | URL Base de la API | `http://localhost:8080` |
-| Consola interactiva Swagger UI | `http://localhost:8080/swagger-ui` |
 | Especificación OpenAPI | `http://localhost:8080/q/openapi` |
 
 ---
 
 ## Datos de prueba incluidos
 
-Al iniciar el servidor, el sistema precarga automáticamente los siguientes registros de prueba:
+Tanto el script `database/museo_xampp_mysql.sql` como el sistema incluyen los siguientes datos iniciales:
 
-### Museos y Salas
-
-| ID Museo | Museo | Salas Registradas |
-|---|---|---|
-| `1` | **Museo Nacional de Colombia** | 1. Sala Arte Moderno (60 personas)<br>2. Sala Memoria y Nación (80 personas)<br>3. Sala de Exposiciones Temporales (120 personas) |
-| `2` | **Museo del Oro** | 4. Sala El Trabajo de los Metales (70 personas)<br>5. Sala Cosmología y Simbolismo (90 personas)<br>6. Sala La Ofrenda (40 personas) |
-
-### Obras precargadas
-
-| ID | Obra | Artista | Categoría | Conservación | Estado |
-|---|---|---|---|---|---|
-| `1` | Violencia | Alejandro Obregón | Pintura | `92%` | Óptimo |
-| `2` | Masacre del 9 de abril | Débora Arango | Pintura | `58%` | Crítico |
-| `3` | Mona Lisa | Fernando Botero | Pintura | `88%` | Óptimo |
-| `4` | Mujer reclinada | Fernando Botero | Escultura | `95%` | Óptimo |
-| `5` | Poporo Quimbaya | Anónimo | Orfebrería prehispánica | `97%` | Óptimo |
-| `6` | Balsa Muisca | Anónimo | Orfebrería prehispánica | `90%` | Óptimo |
-| `7` | Pectoral Calima | Anónimo | Orfebrería prehispánica | `47%` | Crítico |
-
-### Recorridos guiados precargados
-
-- **Arte colombiano del siglo XX:** recorre *Sala de Exposiciones Temporales* → *Sala Arte Moderno* → *Sala Memoria y Nación*.
-- **Ruta del oro prehispánico:** recorre *Sala El Trabajo de los Metales* → *Sala Cosmología y Simbolismo* → *Sala La Ofrenda*.
+| ID | Obra | Artista | Categoría | Sala Actual | Conservación | Estado |
+|---|---|---|---|---|---|---|
+| `1` | Violencia | Alejandro Obregón | Pintura | Sala Arte Moderno | `92%` | Óptimo |
+| `2` | Masacre del 9 de abril | Débora Arango | Pintura | Sala Memoria y Nación | `58%` | Crítico |
+| `3` | Mona Lisa | Fernando Botero | Pintura | Sala de Exposiciones Temporales | `88%` | Óptimo |
+| `4` | Mujer reclinada | Fernando Botero | Escultura | Sala Arte Moderno | `95%` | Óptimo |
+| `5` | Poporo Quimbaya | Anónimo | Orfebrería prehispánica | Sala El Trabajo de los Metales | `97%` | Óptimo |
+| `6` | Balsa Muisca | Anónimo | Orfebrería prehispánica | Sala La Ofrenda | `90%` | Óptimo |
+| `7` | Pectoral Calima | Anónimo | Orfebrería prehispánica | Sala Cosmología y Simbolismo | `47%` | Crítico |
 
 ---
 
 ## Notas importantes
 
-- No se requiere configurar un motor de base de datos externo para ejecutar el proyecto, ya que `SistemaMuseoService` gestiona el estado en memoria durante la ejecución y precarga los datos con `@PostConstruct`.
-- Todas las validaciones de negocio devuelven un mensaje claro en formato `{"error": "..."}` con código de estado HTTP `400 Bad Request`.
-- Cuando se registra una obra con `idArtista` en `null`, el sistema la cataloga automáticamente como obra de autor **Anónimo**.
-- La interfaz visual recomendada para probar todos los endpoints sin herramientas adicionales es **Swagger UI** (`http://localhost:8080/swagger-ui`).
+- Se recomienda tener **MySQL activo en XAMPP** antes de registrar o trasladar obras para que los cambios se reflejen en tiempo real en `sistema_museos` desde **phpMyAdmin**.
+- La base de datos se llama `sistema_museos`.
+- Todas las validaciones de negocio devuelven un mensaje claro en formato `{"error": "..."}` con código HTTP `400 Bad Request`.
+- La interfaz visual recomendada para probar todos los endpoints frente al docente es **Swagger UI** (`http://localhost:8080/swagger-ui`).
 
 ---
 
 ## Posibles errores comunes
 
+### Error de conexión a MySQL en XAMPP
+
+Verificar:
+
+- Que el servicio **MySQL** esté en verde (*Running*) en el panel de control de **XAMPP**.
+- Que la base de datos `sistema_museos` exista en `http://localhost/phpmyadmin`.
+- Que el puerto de MySQL sea `3306` y el usuario sea `root` en `ConexionBD.java`.
+
 ### El puerto 8080 ya está en uso
 
-Verificar que no haya otra instancia de Quarkus u otro servicio corriendo en el puerto `8080`, o modificar la propiedad en `src/main/resources/application.properties`:
+Verificar que no haya otra instancia corriendo en el puerto `8080`, o cambiar el puerto en `src/main/resources/application.properties`:
 
 ```properties
 quarkus.http.port=8081
 ```
-
-### Maven no se reconoce como comando
-
-Instalar Apache Maven o verificar que la carpeta `bin` de Maven y la variable `JAVA_HOME` (apuntando a JDK 17+) estén agregadas al `PATH` del sistema.
 
 ---
 
@@ -415,6 +396,6 @@ Instalar Apache Maven o verificar que la carpeta `bin` de Maven y la variable `J
 
 Proyecto académico.
 
-La API REST se encuentra completamente funcional e integrada con Quarkus, permitiendo registrar, consultar, trasladar y generar reportes sobre museos, salas de exposición, artistas, categorías, obras de arte y recorridos guiados.
+La API REST en Quarkus se encuentra conectada a MySQL (XAMPP) y permite consultar, registrar, trasladar y generar reportes sobre museos, salas de exposición, artistas, categorías, obras de arte y recorridos guiados.
 
 ---
